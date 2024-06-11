@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios = require('axios');
-var chalk = require('chalk');
+var axios = require("axios");
+var chalk = require("chalk");
 var moment = require("moment");
 var TestRail = /** @class */ (function () {
     function TestRail(options) {
@@ -11,32 +11,34 @@ var TestRail = /** @class */ (function () {
     TestRail.prototype.isRunToday = function () {
         var _this = this;
         return axios({
-            method: 'get',
+            method: "get",
             url: this.base + "/get_runs/" + this.options.projectId,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
             auth: {
                 username: this.options.username,
                 password: this.options.password,
-            }
+            },
         }).then(function (response) {
-            _this.lastRunDate = moment.unix(response.data[0].created_on).format('MM/DD/YYYY');
+            _this.lastRunDate = moment
+                .unix(response.data.runs[0].created_on)
+                .format("MM/DD/YYYY");
             // set current date with same format as this.lastRunDate
-            _this.currentDate = moment(new Date()).format('L');
+            _this.currentDate = moment(new Date()).format("L");
             if (_this.lastRunDate === _this.currentDate) {
-                console.log("Test Run already created today. Posting results to Test Run ID: R" + response.data[0].id);
+                console.log("Test Run already created today. Posting results to Test Run ID: R" + response.data.runs[0].id);
                 return true;
             }
             return false;
         });
         // .catch(error => console.error(error));
     };
-    TestRail.prototype.createRun = function (name, description) {
+    TestRail.prototype.createRun = function (name) {
         var _this = this;
         // If the lastRunDate of the most current test run is equal to today's date, don't create a new test run.
         axios({
-            method: 'post',
+            method: "post",
             url: this.base + "/add_run/" + this.options.projectId,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
             auth: {
                 username: this.options.username,
                 password: this.options.password,
@@ -44,12 +46,10 @@ var TestRail = /** @class */ (function () {
             data: JSON.stringify({
                 suite_id: this.options.suiteId,
                 name: name,
-                description: description,
                 include_all: true,
             }),
-        })
-            .then(function (response) {
-            console.log('Creating Test Run... ---> Run id is:  ', response.data.id);
+        }).then(function (response) {
+            console.log("Creating Test Run... ---> Run id is:  ", response.data.id);
             _this.runId = response.data.id;
         });
         // .catch(error => console.(error));
@@ -58,18 +58,20 @@ var TestRail = /** @class */ (function () {
         var _this = this;
         var publishToAPI = function () {
             axios({
-                method: 'post',
+                method: "post",
                 url: _this.base + "/add_results_for_cases/" + _this.runId,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
                 auth: {
                     username: _this.options.username,
                     password: _this.options.password,
                 },
                 data: JSON.stringify({ results: results }),
-            }).then(function (response) {
-                console.log('\n', chalk.magenta.underline.bold('(TestRail Reporter)'));
-                console.log('\n', " - Results are published to " + chalk.magenta("https://" + _this.options.domain + "/index.php?/runs/view/" + _this.runId), '\n');
-            }).catch(function (error) { return console.error(error); });
+            })
+                .then(function (response) {
+                console.log("\n", chalk.magenta.underline.bold("(TestRail Reporter)"));
+                console.log("\n", " - Results are published to " + chalk.magenta("https://" + _this.options.domain + "/index.php?/runs/view/" + _this.runId), "\n");
+            })
+                .catch(function (error) { return console.error(error); });
         };
         if (!this.options.createTestRun) {
             this.runId = this.options.runId;
@@ -78,15 +80,15 @@ var TestRail = /** @class */ (function () {
         }
         else {
             axios({
-                method: 'get',
+                method: "get",
                 url: this.base + "/get_runs/" + this.options.projectId,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
                 auth: {
                     username: this.options.username,
                     password: this.options.password,
-                }
+                },
             }).then(function (response) {
-                _this.runId = response.data[0].id;
+                _this.runId = response.data.runs[0].id;
                 console.log("Publishing results to latest run: " + _this.runId);
                 publishToAPI();
             });
